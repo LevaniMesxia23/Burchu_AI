@@ -1,6 +1,8 @@
 import { apiKey } from "./config.js";
 import { apiUrl } from "../constants/default.js";
 
+window.sendMessage = sendMessage;
+
 async function getAIResponse(userMessage) {
   const response = await fetch(apiUrl, {
     method: "POST",
@@ -34,6 +36,7 @@ async function sendMessage() {
 
   const aiResponse = await getAIResponse(userMessage);
   addMessage(`AI: ${aiResponse}`);
+  speakText(aiResponse)
 }
 
 function addMessage(message) {
@@ -43,4 +46,22 @@ function addMessage(message) {
   chatbox.appendChild(messageElement);
 }
 
-window.sendMessage = sendMessage;
+
+document.getElementById("voiceButton").addEventListener("click", () => {
+  let recorgnition = new (window.SpeechRecognition || window.webkitSpeechRecognition)()
+  recorgnition.lang = "en-US"
+  recorgnition.start()
+
+  recorgnition.onresult = (event) => {
+    const userMessage = event.results[0][0].transcript
+    document.getElementById("userInput").value = userMessage
+    sendMessage()
+  }
+})
+
+function speakText(text){
+  let speech = new SpeechSynthesisUtterance()
+  speech.lang = "en-US"
+  speech.text = text
+  window.speechSynthesis.speak(speech)
+}
