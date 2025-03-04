@@ -2,6 +2,7 @@ import { apiKey } from "./config.js";
 import { apiUrl } from "../constants/default.js";
 
 window.sendMessage = sendMessage;
+document.addEventListener("DOMContentLoaded", loadMessages)
 
 async function getAIResponse(userMessage) {
   const response = await fetch(apiUrl, {
@@ -26,16 +27,19 @@ async function getAIResponse(userMessage) {
   return data.choices[0]?.message?.content || "No response";
 }
 
+
 async function sendMessage() {
   const inputField = document.getElementById("userInput");
   const userMessage = inputField.value;
   if (!userMessage) return;
 
   addMessage(`You: ${userMessage}`);
+  saveMessage("You", userMessage)
   inputField.value = "";
 
   const aiResponse = await getAIResponse(userMessage);
   addMessage(`AI: ${aiResponse}`);
+  saveMessage("AI", aiResponse)
   speakText(aiResponse)
 }
 
@@ -46,6 +50,21 @@ function addMessage(message) {
   chatbox.appendChild(messageElement);
 }
 
+function saveMessage(sender, text){
+  const chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || []
+  chatHistory.push({sender, text})
+  localStorage.setItem("chatHistory", JSON.stringify(chatHistory))
+}
+
+function loadMessages(){
+  const chatbox = document.getElementById("chatbox")
+  const chatHistory = JSON.parse(localStorage.getItem("chatHistory")) || []
+  chatHistory.forEach(message => {
+    const messageElement = document.createElement("p")
+    messageElement.textContent = `${message.sender}: ${message.text}`
+    chatbox.appendChild(messageElement)
+  })
+}
 
 document.getElementById("voiceButton").addEventListener("click", () => {
   let recorgnition = new (window.SpeechRecognition || window.webkitSpeechRecognition)()
@@ -65,3 +84,8 @@ function speakText(text){
   speech.text = text
   window.speechSynthesis.speak(speech)
 }
+
+document.getElementById("clearButton").addEventListener("click", () => {
+  localStorage.removeItem("chatHistory")
+  document.getElementById("chatbox").innerHTML = ""
+})
